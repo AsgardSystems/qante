@@ -1,0 +1,6 @@
+To run the notebook:
+
+$ cd doc
+$ jupyter notebook
+
+Click on hoto.ipyhb to see documentation
