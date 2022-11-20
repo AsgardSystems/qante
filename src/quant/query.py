@@ -1,21 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Mon Jan 24 14:40:00 2022
+"""Module that processes queries on tagged objects
+   
+   Class Query methods:
+      __init__(string/literal list, string, Tagger object, int list, boolean)
+      execute() -> list of Loc tuples
+      UDP(string, lambda)
 
-@author: mescobar
 """
 import regex as re
-import datetime as dt
 
-from .extracterror import handle_error, ExtractError
-from .loc import Loc
-from .loctuple import subinterval, seq_before, meets, starts, closed_span
-from .loctuple import last, before, seq_meets, equal, intersects, disjoint
-from .loctuple import overlaps, first, seq_before_meets
-from .loclist import shortest
-from . import utilities as ut
-from .taggerext import TaggerExt
+from .extracterror import handle_error
+from .loctuple import subinterval, seq_before, meets, starts
+from .loctuple import before, seq_meets, equal, intersects, disjoint
+from .loctuple import overlaps, seq_before_meets
 
 def rm_dups(tuples):
    included = set([])
@@ -65,7 +63,7 @@ def natural_inner_join(sch_tuples1, sch_tuples2):
    if len(overlap) == 0:
       handle_error(110601, 'schemas in natural_inner_join must intersect')
    if len(sch1) != len(set(sch1)) or len(sch2) != len(set(sch2)):
-      handle_error(110601, 'schema has duplicate column number')
+      handle_error(110602, 'schema has duplicate column number')
    # overlap column number to sch1 index
    over2sch1 = {}
    for o in overlap:
@@ -139,7 +137,7 @@ def cartesian_prod(tuples, ptuples, schema):
    # verify that schema['pred'] and schema['tuples'] are disjoint
    if len(set(spred).intersection(set(stuples))) != 0:
       fmt = 'schemas of cartesian product operands must be disjoint: {} {}'
-      handle_error(110601, fmt.format(spred, stuples))
+      handle_error(110603, fmt.format(spred, stuples))
    # column numbers of result
    soutput = sorted(spred+stuples)
    # mapping column number in result to where it comes from
@@ -196,13 +194,14 @@ class Node:
       self.ecount = None    # number of tuples to consider in computation
       self.done = False     # whether computation of node was completed
       self.processed =[]
-   def print_node(self, pref, fd=None):
+   def print_node(self, pref, tm, fd=None):
       if fd == None:
          print(pref,self.op)
          if len(self.result) > 0:
             print(pref+"Current result")
             for schema, tuples in self.result:
                print(pref+"schema: {}, {} tuples".format(schema, len(tuples)))
+               tm.display_tuples(tuples)
                if self.result not in self.processed:
                   self.processed.append(self.result)
          if len(self.children) == 0:
@@ -227,6 +226,27 @@ class Node:
             fd.write('\n')
 
 class Query:
+   """Module for querying tagged text
+      
+   Constructor Parameters:
+      tags (string/literal list) -- list of tags or literals used by query
+      query (string) -- query to be executed. it must follow this syntax:
+         query ::= (query)
+         query ::= conj
+         query ::= disj
+         query ::= term
+         conj ::= term and query
+         disj ::= term or query
+         term ::= pred ( params )
+         term ::= dist (int, int) relop int
+         relop ::= < | > | = | <= | >= | !=
+         params ::= int , params
+         params ::= int
+         pred is any predicate in self.PREDS and int is an integer
+      tagger (Tagger Object) -- tagged text to apply query
+      project (int list) -- list of indices in tags to include in result (default [])
+      log_on (boolean) -- whether to log query execution on file query_exec_log.txt (default False)
+   """
    FSAdist = {0:[('[(]',1,'token')],
           1:[('[0-9]+', 2, 'token')],
           2:[(',',3,'token')],
@@ -261,16 +281,26 @@ class Query:
       self.count = {i:len(tagger.get_locs(tags[i])) for i in range(len(tags))}
       empty_tags = [self.qtags[i] for i in self.count.keys() if self.count[i] == 0]
       if len(empty_tags) != 0:
-          handle_error(210602, 'Tags in query are empty: {}'.format(empty_tags))
+          handle_error(210604, 'Tags in query are empty: {}'.format(empty_tags))
       # list of estimated counts of leaves that have not been computed
       self.ecounts = []
       self.project = project
       if len(set(project).difference(set(range(len(self.qtags))))) != 0:
           fmt = "Invalid project columns in query: {}"
-          handle_error(110603, fmt.format(project))
+          handle_error(110605, fmt.format(project))
    def __del__(self):
       if self.fd != None:
          self.fd.close()
+   def UDP(self, pred_name, pred_function):
+      """User Defined Predicate
+      
+      Parameters:
+         pred_name (string) -- name of predicate
+         pred_function (lambda) -- boolean function to apply when predicate is invoked. 
+         
+      Defines a new predicate to be included in queries
+      """
+      self.PREDS[pred_name] = pred_function
    def tokenize(self):
       def parse_dist(i, tokens):
          """
@@ -300,15 +330,15 @@ class Query:
                   token_list.append(tokens[j])
             else:
                fmt = 'Invalid expression: {}'
-               handle_error(110612, fmt.format(' '.join(tokens[i-1:j+1])))
+               handle_error(110606, fmt.format(' '.join(tokens[i-1:j+1])))
          if state == 8:
             return (j+1, token_list)
          else:
             fmt = 'Invalid expression: {}'
-            handle_error(110612, fmt.format(' '.join(self.tokens[i-1:j+1])))
+            handle_error(110607, fmt.format(' '.join(self.tokens[i-1:j+1])))
       if len(self.tokens) > 0:
          fmt = "Query was already tokenized: {}"
-         handle_error(210604, fmt.format(self.tokens))
+         handle_error(210608, fmt.format(self.tokens))
          
       word_patt = '[\w]+'
       delim_patt = '[)(,><=!]'
@@ -366,12 +396,12 @@ class Query:
                (nxt == 'comma' and self.tokens[i] != ',') or \
                (nxt == 'open_paren' and self.tokens[i] != '('):
                fmt = "Invalid syntax in query: {} - Error while parsing parameters at: {}"
-               handle_error(110605, fmt.format(self.query, self.tokens[i]))
+               handle_error(110609, fmt.format(self.query, self.tokens[i]))
             if nxt == 'num':
                val = int(self.tokens[i])
                if val < 0 or val >= len(self.qtags):
                   fmt = 'Parameter {} of predicate out of range. In query: {}'
-                  handle_error(110606, fmt.format(val, self.query))
+                  handle_error(110610, fmt.format(val, self.query))
                params.append(val)
                nxt = 'comma'
             else:
@@ -393,7 +423,7 @@ class Query:
          op = bool_ops.pop()
          if len(preds) < 2:
             fmt = "Invalid syntax in query: {} - {}"
-            handle_error(110607,fmt.format(self.query, token))
+            handle_error(110611,fmt.format(self.query, token))
          child1 = preds.pop()
          child2 = preds.pop()
          node = Node(op)
@@ -422,7 +452,7 @@ class Query:
                (nxt_type == 'bool_op' and not is_bop(token) and token != ')') or \
                (token == ')' and not open_paren):
                fmt = "Invalid syntax in query: {} - {}"
-               handle_error(110608,fmt.format(self.query, token))
+               handle_error(110612,fmt.format(self.query, token))
             # pushes a boolean operator (and/or) into bool_ops stack
             if is_bop(token):
                bool_ops.append(token)
@@ -445,7 +475,7 @@ class Query:
                # get predicate
                if token not in self.PREDS:
                   fmt = "Invalid predicate in query; {}"
-                  handle_error(110609, fmt.format(token))
+                  handle_error(110613, fmt.format(token))
                function = self.PREDS[token]
                node = Node(function)
                node.params, i = get_pred_params(i+1)
@@ -462,7 +492,7 @@ class Query:
             get_subtree(bool_ops, preds, "")
          if len(preds) == 0:
             fmt = "Invalid query; {}"
-            handle_error(110610, fmt.format(self.query))
+            handle_error(110614, fmt.format(self.query))
          return preds.pop()
       self.root = get_tree(0, False)
    def flatten_tree(self):
@@ -521,7 +551,7 @@ class Query:
       found, indx = self.find_ecount(ecount) 
       if not found:
          fmt = 'Trying to delete unexistent ecount {} in {}'
-         handle_error(110611,fmt.format(ecount), self.ecounts)
+         handle_error(110615,fmt.format(ecount), self.ecounts)
       self.ecounts = self.ecounts[:indx]+self.ecounts[indx+1:]
    def update_ecount(self, oldcnt, newcnt):
       # delete oldcnt
@@ -560,7 +590,7 @@ class Query:
                      parent.result = ptr.result
                   elif len(ptr.result) == 0:
                      msg = "Result of conjunction is empty, it should include a schema"
-                     handle_error(110601, msg )
+                     handle_error(110616, msg )
                   else:
                      # apply join AQUI -- parent.result = naturaljoin(parent.result,ptr.result)
                      new_parent_result =[]
@@ -584,8 +614,6 @@ class Query:
                else:
                   # parent is 'or', append result
                   merge_results(parent.result, ptr.result)
-               #print(parent.op, parent.params)
-               #self.print_result(parent.result)
       def depth_first(ptr, parent, prev_res):
          if len(ptr.children) == 0:
             # a leaf
@@ -624,7 +652,7 @@ class Query:
         
    def print_tree(self):
       def depth_first(ptr, pref):
-         ptr.print_node(pref,self.fd)
+         ptr.print_node(pref,self.tagger, self.fd)
          if len(ptr.children) > 0:
             pref = pref + "---"
             for child in ptr.children:
@@ -722,8 +750,6 @@ class Query:
                      for cols, tuples in new_res:
                         res = res + project(tuples, cols, ptr.params)
                      ptr.result = [(ptr.params, rm_dups(res))]
-                  #print('with prev results',ptr.op,ptr.params)
-                  #self.print_result(ptr.result)
                else:
                   # no previous results
                   tags = [self.qtags[col] for col in ptr.params]
@@ -733,8 +759,6 @@ class Query:
                   newsch, newres = sort_columns(ptr.params, newres_unsorted)
                   new_res = [ (newsch, newres) ]
                   ptr.result = [ (newsch.copy(), newres.copy()) ]
-                  #print('no prev results',ptr.op,ptr.params)
-                  #self.print_result(ptr.result)
                self.delete_ecount(ecount)
                ptr.done = True
                ptr.ecount = len(ptr.result[0][1])
@@ -758,17 +782,23 @@ class Query:
       min_ecount = self.ecounts[0]
       depth_first(self.root, min_ecount, None, None)
    def execute(self):       ## dab 2022-11-07
+      """Execute query
+      
+      Returns the list of tuple locations that satisfy the query. The number 
+      of elements in each tuple is determined from parameters tags and project
+      in the constructor. Each tuple has n elements where n is the number
+      of elements in project, if project is not [], or the number of elements in tags,
+      if project is [].
+      """
       self.tokenize()      # partition query into tokens
       self.parse()         # create parse tree
       self.flatten_tree()  # reduce height of tree
       self.update_tree()   # estimate counts of tuples to be evaluated by leaf nodes
       if self.fd != None: self.print_tree()
-      #self.print_tree()
       while not self.root.done:
          self.compute_leaf() # evaluate leaf with lowest number of tuples to evaluate
          self.update_tree()  # update tree with results of leaf
          if self.fd != None: self.print_tree()
-         #self.print_tree()
       if len(self.project) == 0:
           oschema = list(range(len(self.qtags)))
       else:
@@ -796,130 +826,6 @@ class Query:
          sresult.append(r)
          included.add(r)
       return sresult
-def set_tagger():
-    PAGENR = r'page [0-9]+ of [0-9]+'
-    filename = "/Users/mescobar/home/David/v2021-11.txt"
-    f = open( filename, 'r')
-    txt = f.read() 
-    stat = TaggerExt(txt) # statement to tag
-    stat.tagRE('LINE', ut.LINE, 1)
-    stat.tagRE('PAGENR', PAGENR)
-    return stat
-def test():
-    stat = set_tagger()
-    tags = ['LINE', 'PAGENR', b'voyager select', b'voyager select', 'LINE']
-    queries = ["subinterval(1,0) and subinterval(3,4) and seq_before(0, 2, 4)",\
-               "subinterval(1,0) or subinterval(4,3) and seq_before(0, 2, 3)",\
-               "(subinterval(1,0) or subinterval(4,3)) and seq_before(0, 2, 3)",
-               "subinterval(1,0)", "(subinterval(1,0))", \
-               "(((meets(0) or meets(0,1)) and (starts(0,1) or starts(0,2))) and (starts(1)or meets(1,1)))", \
-                "meets(1) or meets(2) or meets(3) or meets(4) and (meets(0) or meets(1) or meets(2))"
-                ]
-    for query in queries:
-       print("\n\n\n",query)
-       pt = Query(tags,query,stat)
-       pt.execute()     ## dab 2022-11-07
-def compare():
-    try:
-        stat = set_tagger()
-        tags = ['LINE', 'PAGENR', b'voyager select', b'voyager select', 'LINE'] 
-        query = "subinterval(1,0) and subinterval(3,4) and seq_before(0, 2, 4)"
-        query = "subinterval(1,0) and subinterval(3,4) and before(0, 2) and before(2, 4)"
-        betweenlinesinc = lambda quint: subinterval([quint[1],quint[0]]) and \
-                                        subinterval([quint[3],quint[4]]) and \
-                                        seq_before([quint[0], quint[2], quint[4]])
-        print("processing query...")     
-        print("nr of locs in LINE", len(stat.get_locs('LINE')))
-        print("nr of locs in PAGENR", len(stat.get_locs('PAGENR')))
-        print("nr of locs in VOYAGER SELECT", len(stat.get_locs(b'voyager select')))
-        before_query = dt.datetime.now()
-        pt = Query(tags,query,stat)
-        tuples = pt.execute()       ## dab 2022-11-07
-        locs = shortest(list(map(closed_span, tuples)))
-        after_query = dt.datetime.now()
-        fmt = "Execution time evaluating query: {} [{} - {}]"
-        print(fmt.format(after_query-before_query, before_query, after_query))
-        print("Number of results: {}".format(len(locs)))
-        5/0
-        print("without query optimization...")
-        before_wo = dt.datetime.now()
-        locs = shortest(list(map(closed_span,stat.select(betweenlinesinc, tags))))
-        after_wo = dt.datetime.now()
-        fmt = "Execution time w/o query optimization: {} [{} - {}]"
-        print(fmt.format(after_wo - before_wo, before_wo, after_wo))
-        print("Number of results: {}".format(len(locs)))
-        print("with manual optimization...")
-        before_manual =   dt.datetime.now()  
-        stat.tag_list('LINE1', list(map(last, stat.select(subinterval, ['PAGENR', 'LINE']))))
-        stat.tag_list('LINE2', list(map(last, stat.select(subinterval, [b'voyager select', 'LINE'])))) 
-        locs = shortest(list(map(closed_span, stat.select(seq_before,['LINE1', b'voyager select', 'LINE2']))))
-        after_manual =  dt.datetime.now() 
-        fmt = "Execution time with manual optimization: {} [{} - {}]"
-        print(fmt.format(after_manual - before_manual, before_manual, after_manual))
-        print("Number of results: {}".format(len(locs))) 
-    except ExtractError as err:
-        print(err.msg) 
-def test_join():
-   def get_intrval(t):
-      res =[]
-      for l in t:
-         res.append(l.order())
-      return tuple(res)
-   i = 0
-   j = 1
-   k = 2
-   a = Loc(1,2)
-   b = Loc(2,3)
-   c = Loc(3,4)
-   d = Loc(4,5)
-   f = Loc(5,6)
-   x = Loc(10, 11)
-   y = Loc(11, 12)
-   z = Loc(12, 13)
-   # schema-instance pairs
-   result1a = [([i,j],   [(a,b), (c,d)])]
-   result1b = [([i],     [(a,),(f,)]), 
-               ([i,j,k], [(a,b,y), (c,d,z)])]
-   result2a = [([i,j],   [(a,b), (c,d)])]
-   result2b = [([k],     [(a,),(f,)]), 
-               ([i,j,k], [(a,b,y), (c,d,z)])]  
-   result3a = [([i,k], [(a,b), (c,d)])] 
-   result3b = [([i,j,k], [(a,x,c), (a,y,b), (a,z,b), (a,z,c),(c,y,d),(d,x,d)  ])]
-   result4a = [([i,k], [(a,b), (c,d)])] 
-   result4b = [([i,j,k], [])]
-   test = [(result1a, result1b), (result2a, result2b), (result3a, result3b), (result4a, result4b)]
-   for result_a,result_b in test:
-      for s1,t1 in result_a:
-         for s2,t2 in result_b:
-            print(s1, [tuple([l.order() for l in list(t)]) for t in t1])
-            print(s2, [tuple([l.order() for l in list(t)]) for t in t2])
-            print('......')
-            try:
-               schema,tuples = natural_inner_join((s1,t1), (s2,t2)) 
-            except ExtractError as err:
-               print(err.msg)
-               pass
-            cols_cnt = len(schema)
-            print(schema)
-            print([[l.order() for l in row] for row in tuples])   
-            print('\n------')
-   print('cartesian product')
-   result5a = [([i,j],   [(a,b), (c,d)])]
-   result5b = [([k],     [(a,),(f,)])]
-   result5c = [([k], [])]
-   test = [(result5a, result5b), (result5a, result5c)]
-   for result_a,result_b in test:
-      for s1,t1 in result_a:
-         for s2,t2 in result_b:
-            print(s1, [tuple([l.order() for l in list(t)]) for t in t1])
-            print(s2, [tuple([l.order() for l in list(t)]) for t in t2])
-            print('......')
-            schema, tuples = cartesian_prod(t1,t2,{'tuples':s1, 'pred':s2})
-            cols_cnt = len(schema)
-            print(schema)
-            print([[l.order() for l in row] for row in tuples])
-            print('\n------')
 
-if __name__ == "__main__":                  
-    #compare()
-    test_join()
+
+
