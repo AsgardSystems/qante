@@ -1,14 +1,24 @@
-import sys
-import regex as re
+"""Module with common regular expressions and useful functions:
+
+Regular Expressions:
+   LINE
+   INT
+   DECIMAL
+   FIELD
+   altFIELD
+   PAGE
+Functions:   
+   get_column(string, string) -> Loc list
+   cluster(Loc list) -> List of Loc lists
+   get_list_span(Loc list) -> Loc
+"""
 
 ##sys.path.append('/Users/mescobar/home/Professional/Business/py/tagger/src')
 
 from .extracterror import handle_error
 from .loc import Loc, expand
-from .loctuple import subinterval, first, seq_meets, closed_span
-from .loctuple import seq_before, intersects, before
-from .loclist import  merge_list
-from .loctuplelist import groupby
+from .loctuple import subinterval
+from .loctuple import intersects
 from .tagger import Tagger, lit
 
 #-------------------- regular expressions --------------------
@@ -29,16 +39,13 @@ altFIELD = WDEL + '(' + WORD + ')'            # alternative field
 #-------------------- literals ---------------------
 
 def get_column(in_txt, string):
-   """
-   Parameters
-   ----------
-   in_txt:   text to get column from
-   string :  string in column
+   """Get column in in_text that contains string
    
-   Returns
-   -------
-   text locations of column in <inTxt> that contains <string> 
+   Parameters:
+      in_txt (string) --  text to get column from
+      string (string) --  string in column
    
+   Returns text locations of column in in_txt that contains <string>    
    """
    tagged = Tagger(in_txt)
    tagged.tagRE('#FIELD', FIELD, 2, True)
@@ -61,19 +68,18 @@ def get_column(in_txt, string):
    return (abs_cols[res[0]])
 
 def cluster(llist):
-   """
-       Parameters
-       ----------
-       llist:   list of locations
-       Returns
-       -------
-       create a list of lists from <llist>
-       each inner list consists of locations that intersect with at least
-       one other location in that list
-       ex: llist = [o1,(1,2), o2,(1,3), o3,(4,5), o4,(4,10)]
-           result = [ [o1,(1,2), o2,(1,3)],  [o3,(4,5), o4,(4,10)]]
-       inner lists are sorted by intrval
-       this method ignores the offsets of intervals
+   """Clusters locations in llist into intersecting locations
+   
+   Parameters:
+      llist (Loc list) -- locations to cluster
+   
+   It creates a list of clusters from llists, where each cluster consists of 
+   locations that intersect with at least one other location in that cluster.
+   ex: llist = [o1,(1,2), o2,(1,3), o3,(4,5), o4,(4,10)]
+       result = [ [o1,(1,2), o2,(1,3)],  [o3,(4,5), o4,(4,10)]]
+   Locations in clusters are sorted by (start, end)
+   This function ignores the offsets of intervals
+   It returns the list of clusters
    """
    clusters = []
    if len(llist) == 0: return clusters
@@ -137,70 +143,21 @@ def categorize(clusters, categories ):
          categorized_clusters.append(ccluster)
       result.append(categorized_clusters)
    return result
-
-"""         
-def align_cols(cols, categories):
-
-   Parameters
-   ----------
-   cols : list of columns where each column is a list of locations
-          locations are absolute (offset = 0)
-   categories : list of categories where each category is a list of locations
-                locations are absolute (offset = 0)
-   Returns
-   -------
-   list of columns where each column is a list of absolute locations
-  
-   this function fixes misalignments between header columns and content columns
-   for example, consider the following table with the corresponding <cols>
-      header1     header2     header3
-      f1      f2          f3
-      f4      f5          f6
-      cols = [[loc(header1),loc(f1),loc(f4)], 
-              [loc(f2),loc(f5)], 
-              [loc(header2)], 
-              [loc(f3), loc(f6)], 
-              [loc(header3)]]
-      categories = [ [loc(header1),loc(header2),loc(header3)], 
-                     [loc(f1), ..., loc(f6)] ]  
-      where loc(f1) denotes the location of f1
-   the result would be:
-      [[loc(header1),loc(f1),loc(f4)], 
-       [loc(header2),loc(f2),loc(f5)], 
-       [loc(header3), loc(f3), loc(f6)]]  
-
-
-   cat_cols = categorize(cols, categories)
-   ncols = len(cols)
-   # remove empty clusters
-   cat_colsWE = [[ccluster for ccluster in catcluster if len(ccluster)>0] \
-                for catcluster in cat_cols]
-   # compute number of columns in each category
-   ncat_cols = [ len([len(ccluster) for ccluster in catcluster])\
-               for catcluster in cat_colsWE] 
-   if min(ncat_cols) == max(ncat_cols) and min(ncat_cols) != ncols:
-      # misaligned header and content columns
-      result = []
-      for c in range(len(cat_colsWE[0])):
-         newcol = []
-         for r in range(len(categories)):
-            newcol = newcol + cat_colsWE[r][c]
-         result.append(sorted(newcol, key=lambda x:x.txt_order()))
-      return result
-   else:
-      return cols
-"""  
+ 
 
 def get_list_span(locs):
-    """
-        locs : list of locations
-        returns the span of the intervals in <locs>, offsets ignored
-    """
-    if len(locs) == 0: return None
-    start = locs[0].start()
-    end = locs[0].end()
-    for loc in locs[1:]:
-        start = min(start, loc.start())
-        end = max(end, loc.end())
-    return Loc(start, end)
+   """Gets span of all locations in loc
+   
+   Parameters:
+      locs (Loc list) -- locations to get the span from
+      
+   It returns the span of the intervals in locs, offsets ignored
+   """
+   if len(locs) == 0: return None
+   start = locs[0].start()
+   end = locs[0].end()
+   for loc in locs[1:]:
+      start = min(start, loc.start())
+      end = max(end, loc.end())
+   return Loc(start, end)
 

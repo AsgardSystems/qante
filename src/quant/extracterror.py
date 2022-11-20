@@ -1,5 +1,20 @@
+"""Module for error handling
+
+   When an error is found, funcion handle_error must be called
+   
+   handle_error(int, string, dict)
+
 """
-   Codes: tammdd, where tmdd are digits
+class ExtractError(Exception):  
+   def __init__(self, code, msg):
+      self.code = code
+      self.msg = msg
+      
+def handle_error(code, msg, error_loc=None):
+   """Function to handle errors
+   
+   Parameters:
+      code (int) -- error code consisting of 6 digits: tammdd
           t is type of error: 
              1 for serious, 
              2 for warning
@@ -14,18 +29,11 @@
                    05 for utilities
                    06 for query
                    07 for table
-                   08 for taggerExt
                    09 for loclist
           dd is error code within module
-                                       
-   
-"""
-class ExtractError(Exception):  
-   def __init__(self, code, msg):
-      self.code = code
-      self.msg = msg
-      
-def handle_error(code, msg, error_loc=None):
+      msg (string) -- error message
+      error_loc (dict) -- unused                                   
+   """  
    if code < 100000 or code > 999999:
       pref = "ERROR: invalid error code and "
    else:
@@ -37,6 +45,6 @@ def handle_error(code, msg, error_loc=None):
          pref = "Warning[{}]: ".format(code)
       else:
          pref = "ERROR: invalid error code and " 
-         print(pref + msg)
+      print(pref + msg)
 
 

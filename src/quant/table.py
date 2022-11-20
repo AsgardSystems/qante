@@ -1,18 +1,36 @@
 # -*- coding: utf-8 -*-
+"""Module to extract tables from text
+
+get_table(string, int, boolean, int)
+
+Table class methods:
+   __init__(string, int, string)
+   get_cols()
+   get_headers_text(int) 
+   get_rows()
+   get_row(Loc) -> Loc list
+   get_colnumbers(row) -> int list
+   untag_rows()
+"""
 import regex as re
 
 from .extracterror import handle_error
-from .loc import expand, Loc, merge
+from .loc import expand, Loc
 from .loctuple import intersect_len
 from .loctuple import first, subinterval, before, intersects, seq_before, meets
 from .loclist import binary_search
 from .tagger import Tagger
+from .loctuplelist import groupby
 from . import utilities as ut
-
 class Table: 
-   def __init__(self, text, hlinecnt, fieldRE = None):
-      if fieldRE is None:
-         fieldRE = ut.FIELD
+   """Table object
+   Constructor Parameters:
+      text (string) -- text where table is
+      hlinecnt (int) -- number of lines in the table header
+      fieldRE (string) -- regular expression that matches fields in the table (default ut.FIELD)
+   Set data member tagged to define tags on text
+   """
+   def __init__(self, text, hlinecnt, fieldRE = ut.FIELD):
       non_empty = []
       for m in re.finditer(ut.LINE, text):
          if re.search('\S', m.group()) != None:
@@ -52,9 +70,22 @@ class Table:
       locs = self.tagged.project('hFIELD', 'LINE')
       self.tagged.tag_list('phFIELD', locs)               # projected header field
    def get_cols(self):
+      """Get columns from table
+
+      Set the following data members:
+         cols_count -- number of columns in table 
+         cols_lengths -- list of column lengths
+         cont_cols_count -- number of content columns
+         cont_cols_lengths -- list of content column lengths
+         hdr_cols_count -- number of header columns
+         hdr_cols_lengths -- list of header column lengths 
+      Tag columns as 'COL_0', 'COL_1', ....
+      """
       self.cols = ut.cluster(self.tagged.get_locs('pFIELD'))
       self.abs_cols = [sorted(list(map(expand, column)), key=lambda x:x.order()) \
                        for column in self.cols] 
+      # tags columns as COL_0, COL_1, ...
+      self.tagged.tag_lists('COL', self.abs_cols)
       self.cols_count = len(self.cols)
       self.cols_lengths = [len(col) for col in self.cols]
 
@@ -64,7 +95,8 @@ class Table:
  
       self.hdr_cols = ut.cluster(self.tagged.get_locs('phFIELD'))
       self.hdr_cols_count = len(self.hdr_cols)
-      self.hdr_cols_lengths = [len(col) for col in self.hdr_cols]  
+      self.hdr_cols_lengths = [len(col) for col in self.hdr_cols] 
+   
    def split_cont_cols(self):
       """
       split a content column that align with 2 or more headers
@@ -94,9 +126,6 @@ class Table:
          if max_score < 0: return None, None
          cc_best = [k for k in range(self.cont_cols_count) if score[k] == max_score][0]
          hdr_spans = [ut.get_list_span(self.hdr_cols[col]) for col in hdr_cols[cc_best]]
-         #print("splitting content {}".format(cont_spans[cc_best].order()))
-         #print(self.tagged.get_text_list(self.cont_cols[cc_best]))
-         #print("with headers {}".format([self.tagged.get_text_list(self.hdr_cols[k]) for k in hdr_cols[cc_best]])) 
          return cc_best, hdr_spans
       def partition(cont_loc, hdr_spans, j):
          if j == len(hdr_spans)-1 or not intersects((cont_loc, hdr_spans[j+1])):
@@ -122,7 +151,7 @@ class Table:
          self.tagged.tag_list('TOSPLIT', [expand(elt) for elt in self.cont_cols[col2split]])
          pairs =  self.tagged.select(subinterval, ['TOSPLIT', 'LINE'])
          # group content fields by line
-         rows = ut.groupby(pairs, 1, 0)
+         rows = groupby(pairs, 1, 0)
          for row in rows:
             # process one line
             self.tagged.del_tag('TOSPLIT')
@@ -171,12 +200,6 @@ class Table:
       col2split,hdr_spans = get_col_to_split()
       if col2split == None: return False
       cols = split_cont_col(col2split,hdr_spans )
-      """
-      print("----")
-      for col in cols:
-         print([self.tagged.get_text_loc(elt) for elt in col])
-         print("...")
-      """
       # replace  self.cont_cols[cc_best] with cols
       self.cont_cols = self.cont_cols[:col2split] + cols + self.cont_cols[col2split+1:]
       self.cont_cols_count = len(self.cont_cols)
@@ -222,7 +245,6 @@ class Table:
       split = False
       changed = True
       cont_spans = [ut.get_list_span(col) for col in self.cont_cols]
-      #print("splitting...")
       while ((col_count == None and self.cont_cols_count > self.hdr_cols_count) or \
             (col_count != None and self.hdr_cols_count < col_count)) and \
             changed: 
@@ -267,9 +289,6 @@ class Table:
                merged = True
                changed = True
                break  
-      #print(self.tagged.text)
-      #print(self.cont_cols_count, self.hdr_cols_count)
-      #print([self.tagged.get_text_list(elt) for elt in self.hdr_cols])
       # propage changes in hdr_columns to cols, abs_cols, fields, hdr_fields
       if split or merged:
          # update hdr_field related tags
@@ -480,8 +499,10 @@ class Table:
          self.abs_cols = result
         
    def get_headers_text(self, hlinecnt):
-      # tags columns as COL_0, COL_1, ...
-      self.tagged.tag_lists('COL', self.abs_cols)
+      """Get text of each header column
+      
+      Set data member headers to a list of text, one for each header column
+      """
       self.headers = []
       # creates headers for each column
       if hlinecnt > 0:
@@ -495,58 +516,87 @@ class Table:
          self.headers = [' '.join(self.tagged.get_text_list(col)) for col in hdr_cols]
 
    def get_rows(self):
+      """Get rows from table
+      
+      Tag content rows in table as 'ROW_0', 'ROW_1', ...
+      """
       pairs =  self.tagged.select(subinterval, ['cFIELD', 'LINE'])
       # group content fields by line
-      self.rows = ut.groupby(pairs, 1, 0)
+      self.rows = groupby(pairs, 1, 0)
       self.rows_count = len(self.rows)
       self.rows_lengths = [len(row) for row in self.rows]
       self.tagged.tag_lists('ROW', self.rows)
    def get_row(self, loc):
+      """Finds row where Loc is
+      Parameters:
+         loc (Loc) -- location to search
+      Returns row (Loc list) where loc is
       """
-      loc : absolute location
-      get row where loc is
-      """
+      abs_loc = expand(loc)
       for row in self.rows:
          row_pos = [elt.order() for elt in row]
-         if loc.order() in row_pos:
+         if abs_loc.order() in row_pos:
             return row
    def get_colnumbers(self, row):
-      """
-      get column numbers of elements in row
+      """Get column numbers of elements in row
+      
+      Parameters:
+         row (Loc list): list of locations
+      For each location in row, it finds its column number
+      Returns the list of column numbers, one for each element of row 
       """
       result = []
       colnr = 0
       for loc in row:
+         found = False
          for c in range(colnr,self.cols_count):
             col_loc = [elt.order() for elt in self.abs_cols[c]]
             if loc.order() in col_loc:
                colnr = c+1
                result.append(c)
+               found = True
                break
+         if not found:
+            handle_error(110709, "Row element is not in any column")
       return result
    def untag_rows(self):
+      """Remove tags 'ROW_0', 'ROW_1', from tagged"""
       for rownr in range(self.rows_count):
          self.tagged.del_tag("ROW_{}".format(rownr))
+   def untag_cols(self):
+      """Remove tags 'COL_0', 'COL_1', from tagged"""
+      for colnr in range(self.cols_count):
+         self.tagged.del_tag("COL_{}".format(colnr))
       
 def get_table(text, hlinecnt, sparse=False, col_count=None):
+   """Extract table from text
+   
+   Parameters
+      text (string) -- text where table comes from
+      hlinecnt (int) -- number of lines 
+      sparse (bool) -- True, if there are empty cells in table (default False)
+      col_count -- number of columns in table (default None, the function will
+                                               determine the number of columns)
+      
+   The first hlinecnt lines in text that contain non-space characters are considered
+   headers, the rest are considered content
+   
+   Returns a list of dictionaries, one for each content row. Each dictionary maps
+   a header to the value in the row.
+   """
    table = Table(text, hlinecnt)
    table.get_cols()
-   table.get_rows() 
+   table.get_rows()
+   orig_cols_count = table.cols_count
    if col_count != None and table.cols_count != col_count:
       for i in range(2):
-         #print("processing round {} in get_table".format(i))
-         """
-         print("headers")
-         for hdr in table.hdr_cols:
-            print([table.tagged.get_text_loc(elt) for elt in hdr])
-         """
          if hlinecnt != 0 and col_count != table.hdr_cols_count:
             table.adjust_header(col_count)
          if col_count != table.cont_cols_count:
             table.adjust_content(col_count)
          if col_count == table.cont_cols_count and col_count == table.hdr_cols_count:
             break
-         table = Table(text, hlinecnt, altFIELD)
+         table = Table(text, hlinecnt, ut.altFIELD)
          table.get_cols()
          table.get_rows() 
    else:
@@ -567,6 +617,9 @@ def get_table(text, hlinecnt, sparse=False, col_count=None):
    table.get_headers_text(hlinecnt)
    table.untag_rows()
    table.get_rows()
+   # reset columns
+   table.untag_cols()
+   table.tagged.tag_lists('COL', table.abs_cols)
    # ------------------------------------------------------------------
    #      build table represented as a list of dictionaries 
    #      each dictionary maps a column header to a content field text
@@ -582,7 +635,7 @@ def get_table(text, hlinecnt, sparse=False, col_count=None):
             if tag == None:
                fmt = "Content field [{}] in table does not belong to any column"
                msg = fmt.format(table.tagged.get_text_loc(loc))
-               handle_error(110502, msg)
+               handle_error(110507, msg)
             colnr = int(tag[4:]) # column nr
             if colnr >= len(table.headers) or table.headers[colnr] == '':
                if column_tags[colnr] not in row:
