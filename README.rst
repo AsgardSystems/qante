@@ -1,5 +1,5 @@
-quantx - QUery ANnotated TeXt
-=============================
+qante - Query ANnotated TExt
+============================
 
 Motivation
 ----------
@@ -31,15 +31,15 @@ We invite you to view our `talk`_ on `PyData Global 2022`_.
 
 Use pip or python (rev 3 or above) to install from `PyPI`_::
 
-  pip install quantx
-  python -m pip install quantx
+  pip install qante
+  python -m pip install qante
 
 API Documentation is available from python docstrings::
 
   python    # rev 3 or above
-    import quantx, quantx.loc
-    help(quantx)
-    help(quantx.loc)
+    import qante, qante.loc
+    help(qante)
+    help(qante.loc)
 
 
 .. _`PyPI`: https://pypi.org

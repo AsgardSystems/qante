@@ -19,7 +19,7 @@ def handle_error(code, msg, error_loc=None):
              1 for serious, 
              2 for warning
           a is the application
-                1 for quantx
+                1 for qante
           mm is module where it occurred (should be unique within application):
                 for tagging
                    01 is tagger
