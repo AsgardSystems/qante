@@ -1,4 +1,5 @@
 quant - QUery ANnotated Text
+============================
 
 Motivation
 ----------
