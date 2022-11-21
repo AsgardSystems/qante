@@ -1,5 +1,5 @@
-quant - QUery ANnotated Text
-============================
+quantx - QUery ANnotated TeXt
+=============================
 
 Motivation
 ----------
@@ -31,15 +31,15 @@ We invite you to view our `talk`_ on `PyData Global 2022`_.
 
 Use pip or python (rev 3 or above) to install from `PyPI`_::
 
-  pip install quant
-  python -m pip install quant
+  pip install quantx
+  python -m pip install quantx
 
 API Documentation is available from python docstrings::
 
   python    # rev 3 or above
-    import quant, quant.loc
-    help(quant)
-    help(quant.loc)
+    import quantx, quantx.loc
+    help(quantx)
+    help(quantx.loc)
 
 
 .. _`PyPI`: https://pypi.org
