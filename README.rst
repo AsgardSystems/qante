@@ -18,25 +18,25 @@ Solution
 
 This package allows programmers to express what they are searching
 for by using higher-level concepts to express their query as tags,
-locations and expressions on location relations.
+locations, and expressions on location relations.
 
 The *location* of a string of characters within the document is
-the interval defining its starting and end position.
+the interval defining its starting and ending position.
 
-Locations are grouped into sets named by by *tags*.  Tags can be
+Locations are grouped into sets named by *tags*.  Tags can be
 used in conjunctions and disjunctions of interval relations to
 query for tuples of locations.
 
 We invite you to view our `talk`_ on `PyData Global 2022`_.
 
-Use pip or python to install from `PyPI`_::
+Use pip or python (rev 3 or above) to install from `PyPI`_::
 
   pip install quant
   python -m pip install quant
 
 API Documentation is available from python docstrings::
 
-  python
+  python    # rev 3 or above
     import quant, quant.loc
     help(quant)
     help(quant.loc)
