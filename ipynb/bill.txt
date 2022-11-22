@@ -1,0 +1,67 @@
+Detail of Current Charges - Continued                                                                                  Breakdown of Electric Charges
+TAXES & FEES ON GAS CHARGES                                                                               Amount ($)   The total electric charges shown in the "Electric
+                                                                                                                       Service" section include the following compo-
+City of xxxxxxxxx Franchise Fee Differential      21.70 x 1.03%                                               .22
+                                                                                                                       nents. Definitions for these terms are shown on
+Public Purpose Program                       19 Therms x $.072260                                            1.37      page 4 of your bill.
+State Regulatory Fee                         19 Therms x $.000930                                             .02      Electricity Generation                          39.88
+                            Total Taxes & Fees on Gas Charges                                              $1.61       DWR Bond Charge                                  2.50
+                                                                                                                       Transmission                                    13.61
+                                                                                Total Gas Service         $23.31                                                       38.73
+                                                                                                                       Distribution
+Electric Service                                                                                                       Public Purpose Programs                          5.75
+Rate: Standard - DR-Residential                               Climate Zone: Coastal                                    Nuclear Decommissioning                           .25
+                                                                                                                       DWR Revenue Adjustment                           -.10
+Baseline Allowance: 318 kWh                                                                                                                                              .85
+                                                                                                                       Competition Transition Charge
+Billing Period: 4/8/16 - 5/10/16             Total Days: 32                                                            Local Generation Charge                           .18
+Meter Number: xxxxxxxx                       (Next scheduled read date Jun 9, 2016)            Cycle: 6                Reliability Services                              .05
+                                                                                                                       TRAC                                            -7.37
+Meter Constant: 1.000
+                                                                                                                       Total Electric Costs                           $94.33
+Circuit: xxxx    Block: xxxx
+                                                                                                                       Meter Number: xxxxxxxx
+                                   Current       Previous                           Meter
+Billing Period              Days   Reading     - Reading      =   Difference    x   Constant          =    Total kWh          Your Usage                 Average Cost
+                                                                                                                               463 kWh                     per kWh
+04/08/16 - 05/10/16          32    28052         27589                463             1.000                    463
+
+ELECTRIC CHARGES                                                                                          Amount($)                                      Tier 3
+                                                                                                                                                         38¢
+Electricity Delivery (Details below)                  463 kWh                                                                                            50 kWh
+                                    100-130% of             More than 130% of                                                     413 kWh
+WINTER USAGE     Baseline           Baseline                Baseline
+                                                                                                                                                         Tier 2
+kWh used         318                 95                   50                                                                                             20¢
+Rate/kWh         $.09995             $.12361              $.30484                                                                 318 kWh                95 kWh
+22 of 32 Days    $21.85            + $8.07              + $10.48                                 =          40.40
+                                                                                                                                                         Tier 1
+Electricity Delivery (Details below)                  463 kWh                                                                                            17¢
+                                                                                                                                                         318 kWh
+                                    100-130% of             More than 130% of
+SUMMER USAGE     Baseline           Baseline                Baseline
+kWh used         318                 95                   50
+Rate/kWh         $.05122             $.07694              $.27392
+10 of 32 Days    $5.09             + $2.28              + $4.28                                  =          11.65
+
+     Rate Change This Billing Period:                                                                                  The average cost per kilowatt hour (kWh) figures
+There was a rate change on day 23 of your Billing Period. Therefore, your charges for the first 22 days                in the chart above are based on averages.
+were at Rate 1, and the remaining 10 days were at Rate 2.                                                              Actual prices may vary. For more information visit
+                                                                                                                       www.xxxx.com/customer/rates.
+
+DWR Bond Charge                                             463 kWh x $.00539                                 2.50
+
+Winter Electricity Generation                               463 kWh x $.06625 x 22/32             21.09
+Summer Electricity Generation                               463 kWh x $.12986 x 10/32             18.79
+DWR Revenue Adjustment                                                                             -.10
+                                                                         Total Electric Charges $94.33
+TAXES & FEES ON ELECTRIC CHARGES                                                                          Amount ($)
+City of xxxxxxxxx Franchise Fee Differential            91.93 x 5.78%                                        5.31
+Franchise Fees on Electric Energy Supplied by Others     2.40 x 6.88%                                         .17
+State Surcharge Tax                                  463 kWh x $.000290                                       .13
+State Regulatory Fee                                 463 kWh x $.000330                                       .15
+                       Total Taxes & Fees on Electric Charges                                              $5.76
+
+                                                                       Total Electric Service $100.09
+
+                                                                      Total Current Charges $123.40
