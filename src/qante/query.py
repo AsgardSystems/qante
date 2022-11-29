@@ -13,7 +13,7 @@ import regex as re
 from .extracterror import handle_error
 from .loctuple import subinterval, seq_before, meets, starts
 from .loctuple import before, seq_meets, equal, intersects, disjoint
-from .loctuple import overlaps, seq_before_meets
+from .loctuple import overlaps, seq_before_meets, during, finishes
 
 def rm_dups(tuples):
    included = set([])
@@ -259,6 +259,8 @@ class Query:
       self.PREDS = {'subinterval': subinterval, 
                'seq_before': seq_before,
                'meets': meets,
+               'during': during,
+               'finishes': finishes,
                'starts': starts,
                'before': before,
                'equal': equal,

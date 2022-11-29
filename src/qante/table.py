@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 """Module to extract tables from text
-
+This module relies on columns being aligned. If columns are misaligned, function
+get_table tries to get desired results based on the parameters passed. However,
+there will be cases of misaligned colums that this function won't get desired 
+results
+ 
 get_table(string, int, boolean, int)
 
 Table class methods:

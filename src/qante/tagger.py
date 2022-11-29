@@ -1,32 +1,27 @@
-"""Module for tagged text
+"""Module for tagged text. It keeps track of mappings from tags to locations in text
    
    lit(string) -> literal
    
    Class Tagger Methods:
-      SETUP
-         __init__(string, boolean)
-      TAGGING
-         tagRE(string, string, int, boolean)
-         tag_loc(string, Loc)
-         tag_list(string. Loc list)
-         tag_lists(string, list of Loc lists)
-         del_tag(string)
-      DISPLAY      
-         display_matches()
-         display_doc()
-         display_tag(string)
-         display_tuples(list of Loc tuples)
-      INSPECT
-         get_locs(string/literal, boolean) -> Loc list
-         get_text_loc(Loc) -> string
-         get_text_tuple(Loc tuple) -> string tuple
-         get_text_list(Loc list) -> string list
-         get_text_tag(string) -> string list
-         in_tag(Loc, string list) -> string
-         not_in(Loc list, int pair) -> Loc list
-      TRANSFORM   
-         project(string, string) -> Loc list
-         replace_tag(string, string) -> string
+      __init__(string, boolean)
+      tagRE(string, string, int, boolean)
+      tag_loc(string, Loc)
+      tag_list(string. Loc list)
+      tag_lists(string, list of Loc lists)
+      del_tag(string)     
+      display_matches()
+      display_doc()
+      display_tag(string)
+      display_tuples(list of Loc tuples)
+      get_locs(string/literal, boolean) -> Loc list
+      get_text_loc(Loc) -> string
+      get_text_tuple(Loc tuple) -> string tuple
+      get_text_list(Loc list) -> string list
+      get_text_tag(string) -> string list
+      in_tag(Loc, string list) -> string
+      not_in(Loc list, int pair) -> Loc list
+      project(string, string) -> Loc list
+      replace_tag(string, string) -> string
 """
 import regex as re
 
@@ -41,7 +36,7 @@ def lit( str_to_match):
    """
    return {'literal': str_to_match}
 class Tagger:
-   """Tagged text: text and mappings from tags to locations in text
+   """
       
    Constructor parameters:
       text (string) -- text to be tagged
