@@ -226,26 +226,38 @@ class Node:
             fd.write('\n')
 
 class Query:
-   """Module for querying tagged text
-      
+   """Class for querying tagged text
+
    Constructor Parameters:
+
       tags (string/literal list) -- list of tags or literals used by query
-      query (string) -- query to be executed. it must follow this syntax:
-         query ::= (query)
-         query ::= conj
-         query ::= disj
-         query ::= term
-         conj ::= term and query
-         disj ::= term or query
-         term ::= pred ( params )
-         term ::= dist (int, int) relop int
-         relop ::= < | > | = | <= | >= | !=
-         params ::= int , params
-         params ::= int
-         pred is any predicate in self.PREDS and int is an integer
+
+      query (string) -- query to be executed. It must follow this syntax:
+         query  ::= '(' query ')' | conj | disj | term
+         conj   ::= term 'and' query
+         disj   ::= term 'or' query
+
+         term   ::= pred '(' params ')'
+         params ::= int ',' params | int
+
+         term   ::= 'dist(' int ',' int ')' relop int
+         relop  ::= '<' | '>' | '=' | '<=' | '>=' | '!='
+
+         pred   ::= allen_relation | other-relation
+
+         allen-relation ::= 'before' | 'meets'
+            | 'during' | 'finishes' | 'starts' | 'equal' | 'overlaps'
+
+         other-relation ::= 'subinterval' | 'intersects' | 'disjoint'
+            | 'seq_before' | 'seq_before_meets' | 'seq_meets'
+
       tagger (Tagger Object) -- tagged text to apply query
-      project (int list) -- list of indices in tags to include in result (default [])
-      log_on (boolean) -- whether to log query execution on file query_exec_log.txt (default False)
+
+      project (int list) --
+         list of indices in tags to include in result (default [])
+
+      log_on (boolean) -- whether to log query execution
+         on file query_exec_log.txt (default False)
    """
    FSAdist = {0:[('[(]',1,'token')],
           1:[('[0-9]+', 2, 'token')],
