@@ -25,12 +25,15 @@ Locations are grouped into sets named by *tags*.  Tags can be
 used in conjunctions and disjunctions of interval relations to
 query for tuples of locations.
 
+|
 | We invite you to view a `YouTube Video`_ of our `talk`_ on `PyData Global 2022`_:
-|  ∙ `pydataG22.pdf`_ contains slides of our talk.
-|  ∙ `ipynb/pydata.ipynb`_ contains a ``jupyter notebook`` with examples.
-
+|  where we showed this material from our `GitHub`_ repo:
+|  ∙ `pydataG22.pdf`_ slides of our talk.
+|  ∙ `ipynb/pydata.ipynb`_ a ``jupyter notebook`` with examples.
+|
 | Use pip or python (rev 3 or above) to install from `PyPI`_:
 |  ``pip install qante`` (or ``python -m pip install qante``)
+|
 
 Use python docstrings for API Documentation::
 
@@ -52,7 +55,8 @@ See also: "API Documentation" at the end of our jupyter notebook.
 We welcome your questions by electronic mail at: qante{at}asgard.com
 
 
-.. _`PyPI`: https://pypi.org
+.. _`GitHub`: https://github.com/AsgardSystems/qante
+.. _`PyPI`: https://pypi.org/project/qante/
 .. _`talk`: https://global2022.pydata.org/cfp/talk/LUYPAE/
 .. _`PyData Global 2022`: https://pydata.org/global2022/
 .. _`YouTube Video`: https://www.youtube.com/watch?v=gVqshlX4aW0&t=37949s
