@@ -1,7 +1,7 @@
 Qante Release Notes
 ===================
 
-0.0.5 - Aug 2023
+0.0.5 - Sep 2023
 ----------------
 
 This release improves the performance of the query engine. 
