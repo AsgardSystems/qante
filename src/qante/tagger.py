@@ -403,7 +403,7 @@ class Tagger:
          stag = tag['literal']
          stag = stag.replace('(', '\(').replace(')','\)').replace('.', '\.')
          stag = stag.replace('[', '\[').replace(']','\]').replace('$', '\$')
-         stag = stag.replace('^', '\^').replace('?','\?')
+         stag = stag.replace('^', '\^').replace('?','\?').replace('|', '\|')
          res = [Loc(fr,to) for (fr,to) in self._findpatt(stag,0,overlapped)] 
       elif isinstance(tag, str):
          if tag not in self.spans:

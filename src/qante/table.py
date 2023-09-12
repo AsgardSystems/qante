@@ -591,6 +591,8 @@ def get_table(text, hlinecnt, sparse=False, col_count=None):
    table = Table(text, hlinecnt)
    table.get_cols()
    table.get_rows()
+   if table.rows_count == 0: # if table does not have content rows
+      return []
    orig_cols_count = table.cols_count
    if col_count != None and table.cols_count != col_count:
       for i in range(2):

@@ -231,6 +231,13 @@ def disjoint(pair):
       handle_error(110306, "disjoint requires a 2-tuple as input parameter")
    return not intersects(pair)
 def intersect_len(pair):
+   """returns the length (number of characters) in the intersection of
+      locations in pair
+
+   Parameters:
+      pair (Loc tuple): a pair of locations
+
+   """
    s1,e1 = pair[0].intrval
    s2,e2 = pair[1].intrval
    if s1 < s2 and s2 < e1:
@@ -241,6 +248,23 @@ def intersect_len(pair):
       return min(e2-s2, e1-s1)
    else:
       return 0 
+def intersection(pair):
+   """returns location of the intersection between pair[0] and pair[1]
+
+   Parameters:
+      pair (Loc tuple): a pair of locations
+
+   """
+   s1,e1 = pair[0].intrval
+   s2,e2 = pair[1].intrval
+   if s1 < s2 and s2 < e1:
+      return Loc(s2, min(e1,e2))
+   elif s2 < s1 and s1 < e2:
+      return Loc(s1, min(e1,e2))
+   elif s1 == s2:
+      return Loc(s1, min(e1, e2))
+   else:
+      return None 
 def begins(pair):
    return starts(pair) or equal(pair)
 def closed_span(pair):

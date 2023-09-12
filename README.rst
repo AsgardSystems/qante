@@ -19,21 +19,32 @@ Solution
 This package allows programmers to express what they are searching
 for by using higher-level concepts to express their query as tags,
 locations, and expressions on location relations.
+
 The *location* of a string of characters within the document is
 the interval defining its starting and ending position.
+
 Locations are grouped into sets named by *tags*.  Tags can be
 used in conjunctions and disjunctions of interval relations to
 query for tuples of locations.
 
-|
-| We invite you to view a `YouTube Video`_ of our `talk`_ on `PyData Global 2022`_:
-|  where we showed this material from our `GitHub`_ repo:
-|  ∙ `pydataG22.pdf`_ slides of our talk.
-|  ∙ `ipynb/pydata.ipynb`_ a ``jupyter notebook`` with examples.
-|
-| Use pip or python (rev 3 or above) to install from `PyPI`_:
-|  ``pip install qante`` (or ``python -m pip install qante``)
-|
+Documentation
+-------------
+
+We invite you to view our YouTube `video`_ of our `presentation`_ from the `Playlist`_ 
+for `PyData Global 2022`_.  
+
+We presented this material from our `GitHub`_ repo:
+
+* `pydataG22.pdf`_ slides of our talk.
+* `ipynb/pydata.ipynb`_ a ``jupyter notebook`` with examples.
+* `RELEASE_NOTES.rst` describes updates for each release.
+
+
+Use one of these pip or python commands (rev 3 or above) to install from `PyPI`_::
+
+  pip install qante
+  python -m pip install qante
+
 
 Use python docstrings for API Documentation::
 
@@ -54,11 +65,12 @@ See also: "API Documentation" at the end of our jupyter notebook.
 
 We welcome your questions by electronic mail at: qante{at}asgard.com
 
-
 .. _`GitHub`: https://github.com/AsgardSystems/qante
-.. _`PyPI`: https://pypi.org/project/qante/
-.. _`talk`: https://global2022.pydata.org/cfp/talk/LUYPAE/
+.. _`PyPI`: https://pypi.org
+.. _`video`: https://www.youtube.com/watch?v=w9UfQ1TKIuE&t=0s
+.. _`presentation`: https://global2022.pydata.org/cfp/talk/LUYPAE/
 .. _`PyData Global 2022`: https://pydata.org/global2022/
-.. _`YouTube Video`: https://www.youtube.com/watch?v=gVqshlX4aW0&t=37949s
+.. _`Playlist`: https://www.youtube.com/playlist?list=PLGVZCDnMOq0qgYUt0yn7F80wmzCnj2dEq
 .. _`pydataG22.pdf`: https://github.com/AsgardSystems/qante/blob/main/pydataG22.pdf
-.. _`ipynb/pydata.ipynb`:  https://github.com/AsgardSystems/qante/blob/main/ipynb/pydata.ipynb
+.. _`RELEASE_NOTES.rst`: https://github.com/AsgardSystems/qante/blob/main/RELEASE_NOTES.rst
+.. _`ipynb/pydata.ipynb`: https://github.com/AsgardSystems/qante/blob/main/ipynb/pydata.ipynb

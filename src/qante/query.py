@@ -9,6 +9,7 @@
 
 """
 import regex as re
+import math
 
 from .extracterror import handle_error
 from .loctuple import subinterval, seq_before, meets, starts
@@ -60,6 +61,12 @@ def natural_inner_join(sch_tuples1, sch_tuples2):
    sch1, tuples1 = sch_tuples1
    sch2, tuples2 = sch_tuples2
    overlap = list(set(sch1).intersection(set(sch2)))
+   joinsch = sch1 + [col for col in sch2 if col not in overlap]
+   # sort columns so that first column is the one with the lowest
+   # column number, then next corresponds to next column number, and so forth
+   scols = sorted(joinsch)
+   if len(tuples1) == 0 or len(tuples2) == 0:
+      return (scols, [])
    if len(overlap) == 0:
       handle_error(110601, 'schemas in natural_inner_join must intersect')
    if len(sch1) != len(set(sch1)) or len(sch2) != len(set(sch2)):
@@ -78,7 +85,7 @@ def natural_inner_join(sch_tuples1, sch_tuples2):
    t1 = 0
    t2 = 0
    joinres = []
-   joinsch = sch1 + [col for col in sch2 if col not in overlap]
+  
    # compute join
    while t1 < len(stuples1) and t2 < len(stuples2):
       tuple1 = stuples1[t1]
@@ -107,9 +114,6 @@ def natural_inner_join(sch_tuples1, sch_tuples2):
             i += 1
          t1 += 1
          t2 += 1
-   # sort columns in joinres so that first column is the one with the lowest
-   # column number, then next corresponds to next column number, and so forth
-   scols = sorted(joinsch)
    colsmap = []
    for col in scols:
       indx = [i for i in range(len(joinsch)) if joinsch[i] == col][0]
@@ -201,7 +205,7 @@ class Node:
             print(pref+"Current result")
             for schema, tuples in self.result:
                print(pref+"schema: {}, {} tuples".format(schema, len(tuples)))
-               tm.display_tuples(tuples)
+               #tm.display_tuples(tuples)
                if self.result not in self.processed:
                   self.processed.append(self.result)
          if len(self.children) == 0:
@@ -576,6 +580,58 @@ class Query:
    def add_ecount(self, newcnt):
       found, indx = self.find_ecount(newcnt) 
       self.ecounts = self.ecounts[:indx+1]+[newcnt]+self.ecounts[indx+1:]           
+   def partial_cost(self, ptr, cols, tuples):
+      """
+         computes the cost of evaluating predicate on with prev results (cols, tuples)
+         returns cost, disjoint, eval_on_expansion
+            where cost is the cost of computation
+                  disjoint is a boolean that indicates that cols and ptr.params are disjoint
+                  eval_on_expansion is a boolean that indicates that is cheaper to
+                       evaluate predicate on expansion of tuples that include columns in ptr.params
+                       than to evaluate predicate on ptr.params and then join result with tuples
+      """
+      extra_cols = [col for col in ptr.params if col not in cols]
+      if extra_cols == ptr.params:
+         # cols and ptr.params are disjoint
+         disjoint = True
+         eval_on_expansion = None
+         # evaluate predicate on cartesian product of predicate parameters
+         cnt = 1
+         for col in ptr.params:
+            cnt = cnt * self.count[col]
+         # apply cartesian product on eval result and prev result
+         cnt = cnt * len(tuples)
+      else:
+         disjoint = False
+         # evaluate predicate on cartesian product of tuples and tags in extra_cols
+         cnt1 = len(tuples)
+         for col in extra_cols:
+            cnt1 = cnt1 * self.count[col]
+         # evaluate predicate on cartesian product of predicate parameters
+         cnt2 = 1
+         for col in ptr.params:
+            cnt2 = cnt2 * self.count[col]
+         # apply join on eval result and prev result
+         if cnt2 != 0 and len(tuples) != 0:
+            cnt2 += cnt2 * math.log(cnt2) + len(tuples) * math.log(len(tuples))
+         cnt = min(cnt1, round(cnt2,0)) # originally cnt = cnt1
+         eval_on_expansion = (cnt == cnt1)
+      return cnt, disjoint, eval_on_expansion
+   def get_cost_leaf(self, ptr, prev_res):
+       """
+          updates estimate of computation cost of evaluating a leaf 
+       """
+       if prev_res == None:
+          # O(n): where n is size of cartesian product
+          ptr.ecount = 1
+          for col in ptr.params:
+             ptr.ecount = ptr.ecount * self.count[col]
+          return None
+       else:
+          ptr.ecount = 0
+          for cols, tuples in prev_res:
+             cost, disjoint, eval_on_expansion = self.partial_cost(ptr, cols, tuples)
+             ptr.ecount += cost
    def update_tree(self):
       """
          traverse tree to update results of 'and'/'or' nodes if computation of
@@ -633,21 +689,7 @@ class Query:
             # a leaf
             if not ptr.done:
                prev_ecount = ptr.ecount
-               if prev_res == None:
-                  ptr.ecount = 1
-                  for col in ptr.params:
-                     ptr.ecount = ptr.ecount * self.count[col]
-               else:
-                  ptr.ecount = 0
-                  for cols, tuples in prev_res:
-                     extra_cols = [col for col in ptr.params if col not in cols]
-                     if extra_cols == ptr.params:
-                        cnt = 1
-                     else:
-                        cnt = len(tuples)
-                     for col in extra_cols:
-                        cnt = cnt * self.count[col]
-                     ptr.ecount += cnt
+               self.get_cost_leaf(ptr, prev_res)
                # update self.ecounts
                if prev_ecount == None:
                   self.add_ecount(ptr.ecount)
@@ -740,7 +782,7 @@ class Query:
                if prev_res != None:
                   # schemas of prev results and predicate params are disjoint
                   disjoint = True
-                  partial_newres = []
+                  partial_newres = None
                   # computation limited with previous results
                   for cols,tuples in prev_res:
                      schema['tuples'] = cols
@@ -748,13 +790,25 @@ class Query:
                      schema['tags'] = list(set(ptr.params).difference(set(cols)))
                      if set(schema['tags']) == set(schema['pred']):
                         # leaf predicate's parameters and prev result's tags are disjoint
-                        tags = [ self.qtags[i] for i in ptr.params ]
-                        partial_newres = partial_newres + self.tagger.select(ptr.op, tags)
+                        if partial_newres == None:
+                           tags = [ self.qtags[i] for i in ptr.params ]
+                           partial_newres = self.tagger.select(ptr.op, tags)
                         newschema, newres = cartesian_prod(tuples, partial_newres, schema)
                      else:
                         disjoint = False
-                        tags = [ self.qtags[i] for i in schema['tags'] ]
-                        newschema, newres = self.tagger._select(ptr.op, tuples, tags, schema)
+                        # get cost of evaluation
+                        cost, disjoint1, eval_on_expansion = self.partial_cost(ptr, cols, tuples) 
+                        if eval_on_expansion:
+                           # expand previous result with new tags, then apply predicate
+                           tags = [ self.qtags[i] for i in schema['tags'] ]
+                           newschema, newres = self.tagger._select(ptr.op, tuples, tags, schema)
+                        else:
+                           # eval predicate on cartesian product of predicate parameters
+                           if partial_newres == None:
+                              tags = [ self.qtags[i] for i in ptr.params ]
+                              partial_newres = self.tagger.select(ptr.op, tags)
+                           # augment previous result with eval result
+                           newschema, newres = natural_inner_join((cols,tuples),(ptr.params,partial_newres))
                      new_res.append((newschema, rm_dups(newres)))
                   if disjoint:
                      ptr.result = [(ptr.params, rm_dups(partial_newres))]
